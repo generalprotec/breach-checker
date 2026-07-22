@@ -217,7 +217,7 @@ if(!raw){i.style.borderColor='#ff3232';setTimeout(()=>i.style.borderColor='',150
 const emails=raw.split(/[,;\n]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.includes('@'));
 if(emails.length===0){i.style.borderColor='#ff3232';setTimeout(()=>i.style.borderColor='',1500);return}
 ld('email-btn','email-btn-text','email-spinner',true);document.getElementById('email-result').classList.remove('show');
-batchEmails=emails;batchIdx=0;checkSingleEmail(0);ld('email-btn','email-btn-text','email-spinner',false)}
+batchEmails=emails;batchIdx=0;await checkSingleEmail(0);ld('email-btn','email-btn-text','email-spinner',false)}
 
 async function checkSingleEmail(idx){
 const e=batchEmails[idx];
@@ -238,7 +238,8 @@ const btns='<div class="export-bar" style="justify-content:center"><button class
 info.innerHTML+=btns}}
 catch(e2){
 h.innerHTML='<div class="status-icon info">&#x2139;</div><div><div class="result-count">Error: '+e2.message+'</div><div class="result-email">'+e+'</div></div>';
-info.innerHTML='<a href="https://haveibeenpwned.com" target="_blank" style="color:#00b8ff">Have I Been Pwned</a>'}}
+info.innerHTML='<a href="https://haveibeenpwned.com" target="_blank" style="color:#00b8ff">Have I Been Pwned</a>'}
+document.getElementById('email-result').classList.add('show')}
 function checkNextEmail(){batchIdx++;if(batchIdx<batchEmails.length)checkSingleEmail(batchIdx)}
 
 function renderEmailSingle(d,e){
