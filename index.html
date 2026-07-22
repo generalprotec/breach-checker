@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeneralProtec - ¿Tu email está en una filtración?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #matrix-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; opacity: 0.03; pointer-events: none;
+        }
+        .container {
+            position: relative; z-index: 1;
+            max-width: 620px; width: 100%; padding: 40px 24px; margin-top: 60px;
+        }
+        .header { text-align: center; margin-bottom: 40px; }
+        .logo { font-size: 13px; color: #00ff41; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; font-weight: 600; }
+        .header h1 {
+            font-size: 32px; font-weight: 700; margin-bottom: 10px;
+            background: linear-gradient(135deg, #00ff41, #00b8ff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { color: #888; font-size: 15px; line-height: 1.5; }
+        .search-box {
+            background: #12121a; border: 1px solid #1e1e2e;
+            border-radius: 16px; padding: 28px; margin-bottom: 16px;
+        }
+        .search-box label { display: block; font-size: 14px; color: #aaa; margin-bottom: 8px; }
+        .input-group { display: flex; gap: 10px; }
+        .input-group input {
+            flex: 1; padding: 14px 18px; border-radius: 10px;
+            border: 1px solid #2a2a3e; background: #1a1a28; color: #e0e0e0;
+            font-size: 16px; outline: none; transition: border-color 0.2s;
+        }
+        .input-group input:focus { border-color: #00ff41; }
+        .btn {
+            padding: 14px 28px; border-radius: 10px; border: none;
+            background: linear-gradient(135deg, #00ff41, #00b8ff);
+            color: #0a0a0f; font-weight: 700; font-size: 15px;
+            cursor: pointer; transition: transform 0.15s, opacity 0.15s; white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .spinner {
+            display: none; width: 20px; height: 20px;
+            border: 2px solid #2a2a3e; border-top-color: #00ff41;
+            border-radius: 50%; animation: spin 0.6s linear infinite;
+        }
+        .spinner.show { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .result-box {
+            background: #12121a; border: 1px solid #1e1e2e;
+            border-radius: 16px; padding: 28px; display: none;
+            margin-top: 8px; animation: fadeIn 0.3s ease;
+        }
+        .result-box.show { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-header {
+            display: flex; align-items: center; gap: 14px;
+            margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #1e1e2e;
+        }
+        .status-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+        .status-icon.safe { background: rgba(0,255,65,0.15); color: #00ff41; }
+        .status-icon.breached { background: rgba(255,50,50,0.15); color: #ff3232; }
+        .status-icon.info { background: rgba(0,184,255,0.15); color: #00b8ff; }
+        .result-email { font-size: 15px; color: #888; } 
+        .result-count { font-size: 20px; font-weight: 700; }
+
+        .breach-list { list-style: none; max-height: 350px; overflow-y: auto; }
+        .breach-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid #1a1a28; font-size: 14px;
+        }
+        .breach-item:last-child { border-bottom: none; }
+        .breach-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff3232; flex-shrink: 0; }
+
+        .info-msg {
+            font-size: 13px; color: #666; text-align: center;
+            margin-top: 16px; line-height: 1.5;
+        }
+        .footer { text-align: center; padding: 32px 24px; color: #444; font-size: 12px; }
+        .footer a { color: #555; text-decoration: none; }
+        .footer a:hover { color: #00ff41; }
+
+        @media (max-width: 600px) {
+            .container { padding: 24px 16px; margin-top: 30px; }
+            .header h1 { font-size: 24px; }
+            .search-box { padding: 20px; }
+            .input-group { flex-direction: column; }
+            .btn { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+    <div class="container">
+        <div class="header">
+            <div class="logo">GeneralProtec</div>
+            <h1>¿Tu email está filtrado?</h1>
+            <p>Verifica si tu correo aparece en filtraciones de seguridad conocidas.</p>
+        </div>
+        <div class="search-box">
+            <label for="email">Tu email</label>
+            <div class="input-group">
+                <input type="email" id="email" placeholder="ejemplo@correo.com" autocomplete="off" />
+                <button class="btn" id="check-btn" onclick="check()">
+                    <span id="btn-text">Verificar</span>
+                    <span class="spinner" id="spinner"></span>
+                </button>
+            </div>
+        </div>
+        <div class="result-box" id="result">
+            <div class="result-header" id="result-header"></div>
+            <ul class="breach-list" id="breach-list"></ul>
+            <div class="info-msg" id="info-msg"></div>
+        </div>
+        <div class="footer">
+            <a href="https://generalprotec.com" target="_blank">GeneralProtec</a> &middot; Datos: XposedOrNot
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        let w, h, cols, drops;
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            cols = Math.floor(w / 14);
+            drops = Array(cols).fill(1);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        setInterval(() => {
+            ctx.fillStyle = 'rgba(10,10,15,0.05)';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#00ff41';
+            ctx.font = '14px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), i * 14, drops[i] * 14);
+                if (drops[i] * 14 > h && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }, 50);
+
+        async function check() {
+            const input = document.getElementById('email');
+            const email = input.value.trim().toLowerCase();
+            const btn = document.getElementById('check-btn');
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('spinner');
+
+            if (!email || !email.includes('@')) {
+                input.style.borderColor = '#ff3232';
+                setTimeout(() => input.style.borderColor = '', 1500);
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.textContent = 'Verificando...';
+            spinner.classList.add('show');
+            document.getElementById('result').classList.remove('show');
+
+            try {
+                const res = await fetch(`/.netlify/functions/check?email=${encodeURIComponent(email)}`);
+                const data = await res.json();
+
+                if (!data.ok) throw new Error(data.error);
+
+                const header = document.getElementById('result-header');
+                const list = document.getElementById('breach-list');
+                const info = document.getElementById('info-msg');
+
+                if (data.breaches.length === 0) {
+                    header.innerHTML = `
+                        <div class="status-icon safe">&#x2713;</div>
+                        <div>
+                            <div class="result-count">No se encontraron filtraciones</div>
+                            <div class="result-email">${email}</div>
+                        </div>
+                    `;
+                    list.innerHTML = '';
+                    info.textContent = 'Buenas noticias. No aparece en filtraciones conocidas.';
+                } else {
+                    header.innerHTML = `
+                        <div class="status-icon breached">&#x26A0;</div>
+                        <div>
+                            <div class="result-count">${data.breaches.length} filtraci&oacute;n(es)</div>
+                            <div class="result-email">${email}</div>
+                        </div>
+                    `;
+                    list.innerHTML = data.breaches.map(n =>
+                        `<li class="breach-item"><span class="breach-dot"></span>${n}</li>`
+                    ).join('');
+                    info.innerHTML =
+                        'Cambia las contrase&ntilde;as afectadas. Usa autenticaci&oacute;n en dos pasos.';
+                }
+                document.getElementById('result').classList.add('show');
+            } catch (e) {
+                document.getElementById('result-header').innerHTML = `
+                    <div class="status-icon info">&#x2139;</div>
+                    <div>
+                        <div class="result-count">Error en la consulta</div>
+                        <div class="result-email">${e.message}</div>
+                    </div>
+                `;
+                document.getElementById('breach-list').innerHTML = '';
+                document.getElementById('info-msg').innerHTML =
+                    `Puedes consultar directamente en <a href="https://haveibeenpwned.com" target="_blank" style="color:#00b8ff">Have I Been Pwned</a>`;
+                document.getElementById('result').classList.add('show');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Verificar';
+                spinner.classList.remove('show');
+            }
+        }
+
+        document.getElementById('email').addEventListener('keydown', e => {
+            if (e.key === 'Enter') check();
+        });
+    </script>
+</body>
+</html>
