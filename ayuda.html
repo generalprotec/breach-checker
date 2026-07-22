@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ayuda - GeneralProtec Breach Checker</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh}
+.container{max-width:800px;margin:0 auto;padding:48px 28px}
+h1{font-size:32px;font-weight:700;margin-bottom:24px;background:linear-gradient(135deg,#00ff41,#00b8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2{font-size:22px;color:#ddd;margin:32px 0 12px;border-bottom:1px solid #1e1e2e;padding-bottom:8px}
+h3{font-size:17px;color:#eee;margin:20px 0 8px}
+p{color:#bbb;font-size:15px;line-height:1.7;margin-bottom:12px}
+ul{color:#bbb;font-size:15px;line-height:1.7;margin:8px 0 16px 24px}
+li{margin-bottom:6px}
+strong{color:#fff}
+code{background:#1a1a28;padding:2px 6px;border-radius:4px;font-size:14px;color:#00ff41}
+.box{background:#12121a;border:1px solid #1e1e2e;border-radius:12px;padding:20px;margin:16px 0}
+.box.green{border-color:#00ff41}
+.box.blue{border-color:#00b8ff}
+.box.red{border-color:#ff4444}
+a{color:#00b8ff;text-decoration:none}
+a:hover{text-decoration:underline}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;margin:2px}
+.badge-g{background:rgba(0,255,65,.12);color:#00ff41}
+.badge-b{background:rgba(0,184,255,.12);color:#00b8ff}
+.badge-y{background:rgba(255,180,0,.12);color:#ffb400}
+.badge-r{background:rgba(255,50,50,.12);color:#ff4444}
+.footer{text-align:center;padding:40px 24px;color:#555;font-size:13px}
+.back{display:inline-block;margin-top:24px;color:#00b8ff;font-size:14px}
+@media(max-width:600px){.container{padding:24px 16px}h1{font-size:24px}h2{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Guía del Breach Checker</h1>
+<p>Esta herramienta verifica si tu email o contraseña aparecen en filtraciones de seguridad conocidas, usando la base de datos gratuita de <a href="https://xposedornot.com" target="_blank">XposedOrNot</a>.</p>
+
+<h2>Pestaña Email</h2>
+<p>Ingresa uno o varios correos y haz clic en <strong>Verificar</strong>.</p>
+<div class="box blue">
+<strong>Formatos aceptados:</strong><br>
+<code>correo@ejemplo.com</code> — un solo correo<br>
+<code>correo1@a.com, correo2@b.com</code> — varios separados por coma<br>
+<code>correo1@a.com; correo2@b.com</code> — también con punto y coma
+</div>
+
+<h3>Qué significan los resultados</h3>
+<div class="box green"><strong>Sin filtraciones</strong> — Tu email no aparece en ninguna base de datos de filtraciones conocidas.</div>
+<div class="box red"><strong>N filtraciones encontradas</strong> — Tu email aparece en una o más filtraciones. Revisa cada tarjeta para más detalles.</div>
+
+<h3>Las tarjetas de filtración</h3>
+<p>Cada tarjeta muestra:</p>
+<ul>
+<li><strong>Nombre</strong> del servicio o sitio filtrado</li>
+<li><strong>Dominio</strong> del sitio afectado</li>
+<li><strong>Registros</strong> — cantidad de cuentas expuestas (ej: 2.5M = 2.5 millones)</li>
+<li><strong>Año</strong> — cuándo ocurrió la filtración</li>
+<li><strong>Industria</strong> — tipo de empresa (Tecnología, Redes, Ventas, etc.)</li>
+<li><strong>Riesgo de contraseña</strong> — cómo estaba protegida:
+  <span class="badge badge-r">Texto plano</span> = visible sin cifrar (muy grave),
+  <span class="badge badge-y">Fácil</span> = cifrado débil,
+  <span class="badge badge-g">Hash seguro</span> = bien cifrada,
+  <span class="badge" style="background:rgba(120,120,120,.15);color:#bbb">Desc.</span> = sin información
+</li>
+<li><strong>Datos expuestos</strong> — qué información se filtró (Correos, Contraseñas, Nombres, etc.)</li>
+<li><strong>Detalles</strong> — descripción completa (clic en la tarjeta para expandir)</li>
+</ul>
+
+<h3>Sección de análisis</h3>
+<p>Debajo de las filtraciones aparece un panel con:</p>
+<ul>
+<li><strong>Nivel de riesgo</strong> — puntuación del 0 al 10
+  <span class="badge badge-g">Bajo</span>
+  <span class="badge badge-y">Medio</span>
+  <span class="badge badge-r">Alto</span>
+</li>
+<li><strong>Fortaleza de contraseñas</strong> — cuántas estaban en texto plano, hash seguro, etc.</li>
+<li><strong>Industrias más afectadas</strong> — qué rubros aparecen más</li>
+<li><strong>Tipos de datos expuestos</strong> — qué categorías de información se filtraron</li>
+<li><strong>Filtraciones por año</strong> — línea de tiempo de cuándo ocurrieron</li>
+<li><strong>Pastes</strong> — si el email apareció en sitios como Pastebin</li>
+</ul>
+
+<h3>Funciones adicionales</h3>
+<ul>
+<li><strong>Ver filtraciones para @dominio</strong> — haz clic en el enlace para ver todos los breaches de ese dominio en la pestaña Filtraciones</li>
+<li><strong>Exportar JSON / TXT</strong> — descarga el reporte completo</li>
+<li><strong>Siguiente</strong> — si verificaste varios emails, avanza al siguiente</li>
+</ul>
+
+<h2>Pestaña Contraseña</h2>
+<p>Verifica si una contraseña específica ha sido filtrada. Tu contraseña <strong>nunca se envía al servidor</strong> — se calcula un hash localmente y solo se envía un prefijo (k-anonymity).</p>
+<ul>
+<li><strong>No encontrada</strong> — no aparece en filtraciones conocidas</li>
+<li><strong>Filtrada!</strong> — apareció N veces. No uses esa contraseña</li>
+<li><strong>Composición</strong> — muestra dígitos, letras, caracteres especiales y longitud</li>
+</ul>
+
+<h2>Pestaña Filtraciones</h2>
+<p>Explora la base de datos completa de XposedOrNot (760+ filtraciones).</p>
+<ul>
+<li>Sin filtro: muestra todas las filtraciones conocidas</li>
+<li>Con dominio: escribe <code>twitter.com</code> para ver solo las filtraciones de Twitter</li>
+<li>Cada tarjeta se expande con la descripción del incidente</li>
+</ul>
+
+<h2>Límites de la API gratuita</h2>
+<div class="box">
+<p style="margin-bottom:8px">La API gratuita de XposedOrNot tiene restricciones por IP:</p>
+<ul>
+<li><strong>Email check:</strong> 25 por hora, 100 por día</li>
+<li><strong>Analytics:</strong> 25 por hora, 100 por día</li>
+<li><strong>Lista de filtraciones:</strong> 50 por hora, 100 por día</li>
+<li><strong>Contraseña:</strong> sin límite fijo</li>
+</ul>
+</div>
+
+<h2>Recomendaciones</h2>
+<div class="box red">
+<ul>
+<li>Si tu email aparece en una filtración, <strong>cambia esa contraseña ya</strong></li>
+<li>Si usaste la misma contraseña en otros sitios, <strong>cámbiala también</strong></li>
+<li>Activa <strong>autenticación en dos pasos</strong> (2FA) donde sea posible</li>
+<li>Usa un <strong>gestor de contraseñas</strong> para no repetirlas</li>
+</ul>
+</div>
+
+<a href="index.html" class="back">&larr; Volver al Breach Checker</a>
+</div>
+<div class="footer">
+<a href="https://generalprotec.com" target="_blank">GeneralProtec</a> &middot; Datos: <a href="https://xposedornot.com" target="_blank">XposedOrNot</a>
+</div>
+</body>
+</html>
