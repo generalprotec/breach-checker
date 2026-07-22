@@ -78,6 +78,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 .footer a{color:#aaa;text-decoration:none}
 .footer a:hover{color:#00ff41}
 .rate-note{font-size:12px;color:#999;text-align:right;margin-top:8px}
+.export-bar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.export-bar .btn-sm{padding:10px 18px;font-size:13px;background:transparent;border:1px solid #2a2a3e;color:#ccc;border-radius:8px;cursor:pointer;transition:all .15s}
+.export-bar .btn-sm:hover{border-color:#00ff41;color:#00ff41}
+.domain-check-link{display:inline-block;margin:8px 0;font-size:13px;color:#00b8ff;cursor:pointer;text-decoration:underline}
+.domain-check-link:hover{color:#66ddff}
+.paste-card{background:#1a1a28;border:1px solid #442, border-radius:10px;padding:14px;margin:8px 0}
+.paste-card .paste-meta{font-size:12px;color:#999;margin:4px 0}
+.batch-progress{font-size:14px;color:#00b8ff;margin:10px 0;text-align:center}
+.batch-summary{background:#1a1a28;border:1px solid #242440;border-radius:10px;padding:16px;margin:8px 0}
+.batch-summary-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e1e2e;font-size:13px}
+.batch-summary-item:last-child{border-bottom:none}
 .breaches-table{max-height:500px;overflow-y:auto}
 .breaches-table::-webkit-scrollbar{width:6px}
 .breaches-table::-webkit-scrollbar-track{background:#12121a}
@@ -111,7 +122,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 <div class="search-box">
 <label for="email">Correo electrónico</label>
 <div class="input-group">
-<input type="email" id="email" placeholder="ejemplo@correo.com" autocomplete="off">
+<input type="text" id="email" placeholder="ejemplo@correo.com (o varios separados por coma)" autocomplete="off">
 <button class="btn" id="email-btn" onclick="checkEmail()">
 <span id="email-btn-text">Verificar</span>
 <span class="spinner" id="email-spinner"></span>
@@ -164,6 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 </div>
 </div>
 <script>
+let lastData=null,lastEmails=[],batchIdx=0;
 const canvas=document.getElementById('matrix-canvas');
 const ctx=canvas.getContext('2d');
 let w,h,cols,drops;
@@ -179,19 +191,61 @@ function riskLabel(r){return r==='easytocrack'?'Facil':r==='plaintext'?'TextoPla
 function fmt(n){if(!n)return'';if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(0)+'K';return n}
 function td(e){const d=e.currentTarget.querySelector('.breach-details');if(d)d.classList.toggle('open')}
 function sa(b){const c=b.parentElement;for(let i=0;i<c.children.length;i++){const ch=c.children[i];if(ch.classList.contains('breach-card')&&ch.style.display==='none')ch.style.display=''};b.style.display='none'}
+let batchEmails=[],batchIdx=0;
+
+function renderTimeline(years){
+if(!years)return'';
+const entries=Object.entries(years[0]||{}).filter(([k])=>k.startsWith('y')).map(([k,v])=>({year:k.substring(1),count:v}));
+const max=Math.max(...entries.map(e=>e.count),1);
+if(max===0)return'';
+let bars='';entries.forEach(e=>{const pct=Math.max(4,(e.count/max)*100);bars+='<div style="flex:1;text-align:center"><div style="height:'+pct+'px;background:linear-gradient(180deg,#00b8ff,#00ff41);border-radius:3px 3px 0 0;min-height:4px;width:100%"></div><div style="font-size:9px;color:#666;margin-top:3px">'+e.year+'</div><div style="font-size:9px;color:#999">'+e.count+'</div></div>'});
+return'<div class="metric-card"><h4>Filtraciones por a&#241;o</h4><div style="display:flex;align-items:flex-end;gap:2px;height:100px;padding-top:10px">'+bars+'</div></div>'}
+
+function renderPastes(a){
+const ps=a.PastesSummary;
+if(!ps||!ps.cnt||ps.cnt==0)return'';
+const ep=a.ExposedPastes;
+let html='<div class="metric-card" style="grid-column:1/-1"><h4>Exposici&#243;n en Pastes</h4><div style="font-size:13px;color:#ffb400">'+ps.cnt+' paste(s) encontrados</div>';
+if(ep&&ep.length>0){ep.slice(0,5).forEach(p=>{
+const src=p.source||p.Source||'Desconocido',date=p.date||p.Date||'',email=p.email||p.Email||'';
+html+='<div class="paste-card" style="margin:6px 0;padding:10px;background:#12121a;border-radius:8px;font-size:12px"><strong style="color:#ddd">'+(src)+'</strong>'+(date?' <span style="color:#888">'+date+'</span>':'')+(email?'<br><span style="color:#888">'+email+'</span>':'')+'</div>'})}
+html+='</div>';return html}
 
 async function checkEmail(){
-const i=document.getElementById('email'),e=i.value.trim().toLowerCase();
-if(!e||!e.includes('@')){i.style.borderColor='#ff3232';setTimeout(()=>i.style.borderColor='',1500);return}
+const i=document.getElementById('email'),raw=i.value.trim();
+if(!raw){i.style.borderColor='#ff3232';setTimeout(()=>i.style.borderColor='',1500);return}
+const emails=raw.split(/[,;\n]+/).map(e=>e.trim().toLowerCase()).filter(e=>e.includes('@'));
+if(emails.length===0){i.style.borderColor='#ff3232';setTimeout(()=>i.style.borderColor='',1500);return}
 ld('email-btn','email-btn-text','email-spinner',true);document.getElementById('email-result').classList.remove('show');
+batchEmails=emails;batchIdx=0;checkSingleEmail(0);ld('email-btn','email-btn-text','email-spinner',false)}
+
+async function checkSingleEmail(idx){
+const e=batchEmails[idx];
+const h=document.getElementById('email-result-header'),c=document.getElementById('email-breaches-container'),m=document.getElementById('email-metrics-container'),info=document.getElementById('email-info');
+if(batchEmails.length>1)c.innerHTML='<div class="batch-progress">Verificando '+(idx+1)+' de '+batchEmails.length+': '+e+'</div>';
 try{
 const d=await api({email:e,analytics:'1'});
 if(!d.ok)throw new Error(d.error);
+lastData=d;
+if(batchEmails.length>1){
+const summary=batchEmails.map((em,i)=>({email:em,found:i<=idx?(i===idx?d.total:'?'):'?'}));
+let sh='<div class="section-title">Resumen batch</div><div class="batch-summary">';
+summary.forEach(s=>{sh+='<div class="batch-summary-item"><span>'+(s.found==='?'?'⏳':s.found>0?'⚠️':'✅')+' '+s.email+'</span><span style="color:'+(s.found>0?'#ff4444':'#00ff41')+'">'+(s.found==='?'?'...':s.found>0?s.found+' filtraciones':'Limpio')+'</span></div>'});
+sh+='</div>';c.innerHTML=sh}
+renderEmailSingle(d,e);
+if(batchEmails.length>1&&idx<batchEmails.length-1){
+const btns='<div class="export-bar" style="justify-content:center"><button class="btn-sm" onclick="batchIdx='+idx+';checkNextEmail()">Siguiente: '+batchEmails[idx+1]+'</button></div>';
+info.innerHTML+=btns}}
+catch(e2){
+h.innerHTML='<div class="status-icon info">&#x2139;</div><div><div class="result-count">Error: '+e2.message+'</div><div class="result-email">'+e+'</div></div>';
+info.innerHTML='<a href="https://haveibeenpwned.com" target="_blank" style="color:#00b8ff">Have I Been Pwned</a>'}}
+function checkNextEmail(){batchIdx++;if(batchIdx<batchEmails.length)checkSingleEmail(batchIdx)}
+
+function renderEmailSingle(d,e){
 const h=document.getElementById('email-result-header'),c=document.getElementById('email-breaches-container'),m=document.getElementById('email-metrics-container'),info=document.getElementById('email-info');
 if(d.total===0){
 h.innerHTML='<div class="status-icon safe">&#x2713;</div><div><div class="result-count">Sin filtraciones</div><div class="result-email">'+e+'</div></div>';
-c.innerHTML='';m.innerHTML='';info.innerHTML='Tu email no aparece en filtraciones conocidas.';
-document.getElementById('email-result').classList.add('show');return}
+c.innerHTML='';m.innerHTML='';info.innerHTML='Tu email no aparece en filtraciones conocidas.';return}
 h.innerHTML='<div class="status-icon breached">&#x26A0;</div><div><div class="result-count">'+d.total+' filtraci&#243;n(es)</div><div class="result-email">'+e+'</div></div>';
 const dd=d.analytics?.ExposedBreaches?.breaches_details||[],dm={};dd.forEach(x=>{dm[x.breach]=x});
 let ch='<div class="section-title">Filtraciones encontradas</div>';
@@ -211,13 +265,24 @@ const ind2=a.BreachMetrics?.industry?.[0];
 if(ind2&&ind2.length>0){const v=ind2.filter(i=>i[1]>0).slice(0,6);if(v.length>0){const mx=Math.max(...v.map(i=>i[1]),1);mh+='<div class="metric-card"><h4>Industrias m&#225;s afectadas</h4>';v.forEach(it=>{const pct=Math.max(4,(it[1]/mx)*100);mh+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px"><span style="width:90px;flex-shrink:0;color:#888">'+it[0]+'</span><div style="flex:1;height:14px;background:#1e1e2e;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#00b8ff,#00ff41);border-radius:4px;min-width:4px"></div></div><span style="color:#aaa;width:30px;text-align:right">'+it[1]+'</span></div>'});mh+='</div>'}}
 const xd=a.BreachMetrics?.xposed_data?.[0];
 if(xd&&xd.children){const tags=[];xd.children.forEach(l2=>{if(l2.children)l2.children.forEach(l3=>{if(l3.name)tags.push(l3.name.replace('data_','').replace(/_/g,' '))})});if(tags.length>0){mh+='<div class="metric-card"><h4>Tipos de datos expuestos</h4><div class="data-tags">'+tags.map(t=>'<span class="data-tag">'+t+'</span>').join('')+'</div></div>'}}
+mh+=renderTimeline(a.BreachMetrics?.yearwise_details);
+mh+=renderPastes(a);
 mh+='</div>';m.innerHTML=mh}
-info.innerHTML='Cambia las contrase&#241;as afectadas. Usa autenticaci&#243;n en dos pasos.';
-document.getElementById('email-result').classList.add('show')}
-catch(e){
-document.getElementById('email-result-header').innerHTML='<div class="status-icon info">&#x2139;</div><div><div class="result-count">Error</div><div class="result-email">'+e.message+'</div></div>';
-document.getElementById('email-info').innerHTML='No se pudo consultar. <a href="https://haveibeenpwned.com" target="_blank">Have I Been Pwned</a>';document.getElementById('email-result').classList.add('show')}
-finally{ld('email-btn','email-btn-text','email-spinner',false)}}
+const domPart=e.split('@')[1];
+const domainHtml=domPart?'<span class="domain-check-link" onclick="checkDomain(\''+domPart+'\')">Ver filtraciones para @'+domPart+'</span>':'';
+info.innerHTML='Cambia las contrase&#241;as afectadas. Usa autenticaci&#243;n en dos pasos.<br>'+domainHtml;
+const exportBar='<div class="export-bar"><button class="btn-sm" onclick="exportJSON()">Exportar JSON</button><button class="btn-sm" onclick="exportTXT()">Exportar TXT</button></div>';
+info.innerHTML+=exportBar}
+
+function checkDomain(dom){switchTab('breaches');document.getElementById('domain').value=dom;fetchBreaches()}
+
+function exportJSON(){if(!lastData)return;const b=new Blob([JSON.stringify(lastData,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='breach-report.json';a.click();URL.revokeObjectURL(a.href)}
+function exportTXT(){if(!lastData)return;
+let txt='=== GeneralProtec Breach Report ===\nEmail: '+lastData.email+'\nTotal breaches: '+lastData.total+'\n\nBreaches:\n';
+(lastData.breaches||[]).forEach(n=>{txt+='- '+n+'\n'});
+const dd=lastData.analytics?.ExposedBreaches?.breaches_details||[];
+dd.forEach(d=>{txt+='\n'+d.breach+':\n  Domain: '+d.domain+'\n  Date: '+d.xposed_date+'\n  Records: '+d.xposed_records+'\n  Data: '+d.xposed_data+'\n  Risk: '+d.password_risk+'\n  Description: '+d.details+'\n'});
+const b=new Blob([txt],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='breach-report.txt';a.click();URL.revokeObjectURL(a.href)}
 
 async function checkPassword(){
 const i=document.getElementById('password'),p=i.value.trim();
