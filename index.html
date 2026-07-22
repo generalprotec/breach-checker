@@ -175,7 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 </div>
 </div>
 <script>
-let lastData=null,lastEmails=[],batchIdx=0;
+let lastData=null,batchEmails=[],batchIdx=0;
 const canvas=document.getElementById('matrix-canvas');
 const ctx=canvas.getContext('2d');
 let w,h,cols,drops;
@@ -191,7 +191,7 @@ function riskLabel(r){return r==='easytocrack'?'Facil':r==='plaintext'?'TextoPla
 function fmt(n){if(!n)return'';if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(0)+'K';return n}
 function td(e){const d=e.currentTarget.querySelector('.breach-details');if(d)d.classList.toggle('open')}
 function sa(b){const c=b.parentElement;for(let i=0;i<c.children.length;i++){const ch=c.children[i];if(ch.classList.contains('breach-card')&&ch.style.display==='none')ch.style.display=''};b.style.display='none'}
-let batchEmails=[],batchIdx=0;
+
 
 function renderTimeline(years){
 if(!years)return'';
