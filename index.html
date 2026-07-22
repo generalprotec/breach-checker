@@ -1,242 +1,269 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeneralProtec - ¿Tu email está en una filtración?</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
-            background: #0a0a0f;
-            color: #e0e0e0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #matrix-canvas {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 0; opacity: 0.03; pointer-events: none;
-        }
-        .container {
-            position: relative; z-index: 1;
-            max-width: 620px; width: 100%; padding: 40px 24px; margin-top: 60px;
-        }
-        .header { text-align: center; margin-bottom: 40px; }
-        .logo { font-size: 13px; color: #00ff41; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; font-weight: 600; }
-        .header h1 {
-            font-size: 32px; font-weight: 700; margin-bottom: 10px;
-            background: linear-gradient(135deg, #00ff41, #00b8ff);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .header p { color: #888; font-size: 15px; line-height: 1.5; }
-        .search-box {
-            background: #12121a; border: 1px solid #1e1e2e;
-            border-radius: 16px; padding: 28px; margin-bottom: 16px;
-        }
-        .search-box label { display: block; font-size: 14px; color: #aaa; margin-bottom: 8px; }
-        .input-group { display: flex; gap: 10px; }
-        .input-group input {
-            flex: 1; padding: 14px 18px; border-radius: 10px;
-            border: 1px solid #2a2a3e; background: #1a1a28; color: #e0e0e0;
-            font-size: 16px; outline: none; transition: border-color 0.2s;
-        }
-        .input-group input:focus { border-color: #00ff41; }
-        .btn {
-            padding: 14px 28px; border-radius: 10px; border: none;
-            background: linear-gradient(135deg, #00ff41, #00b8ff);
-            color: #0a0a0f; font-weight: 700; font-size: 15px;
-            cursor: pointer; transition: transform 0.15s, opacity 0.15s; white-space: nowrap;
-        }
-        .btn:hover { transform: translateY(-1px); opacity: 0.9; }
-        .btn:active { transform: translateY(0); }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-        .spinner {
-            display: none; width: 20px; height: 20px;
-            border: 2px solid #2a2a3e; border-top-color: #00ff41;
-            border-radius: 50%; animation: spin 0.6s linear infinite;
-        }
-        .spinner.show { display: inline-block; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .result-box {
-            background: #12121a; border: 1px solid #1e1e2e;
-            border-radius: 16px; padding: 28px; display: none;
-            margin-top: 8px; animation: fadeIn 0.3s ease;
-        }
-        .result-box.show { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .result-header {
-            display: flex; align-items: center; gap: 14px;
-            margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #1e1e2e;
-        }
-        .status-icon {
-            width: 44px; height: 44px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; flex-shrink: 0;
-        }
-        .status-icon.safe { background: rgba(0,255,65,0.15); color: #00ff41; }
-        .status-icon.breached { background: rgba(255,50,50,0.15); color: #ff3232; }
-        .status-icon.info { background: rgba(0,184,255,0.15); color: #00b8ff; }
-        .result-email { font-size: 15px; color: #888; } 
-        .result-count { font-size: 20px; font-weight: 700; }
-
-        .breach-list { list-style: none; max-height: 350px; overflow-y: auto; }
-        .breach-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 0; border-bottom: 1px solid #1a1a28; font-size: 14px;
-        }
-        .breach-item:last-child { border-bottom: none; }
-        .breach-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff3232; flex-shrink: 0; }
-
-        .info-msg {
-            font-size: 13px; color: #666; text-align: center;
-            margin-top: 16px; line-height: 1.5;
-        }
-        .footer { text-align: center; padding: 32px 24px; color: #444; font-size: 12px; }
-        .footer a { color: #555; text-decoration: none; }
-        .footer a:hover { color: #00ff41; }
-
-        @media (max-width: 600px) {
-            .container { padding: 24px 16px; margin-top: 30px; }
-            .header h1 { font-size: 24px; }
-            .search-box { padding: 20px; }
-            .input-group { flex-direction: column; }
-            .btn { width: 100%; text-align: center; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GeneralProtec - Breach Checker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.9.3/sha3.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh}
+#matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:.025;pointer-events:none}
+.container{position:relative;z-index:1;max-width:780px;width:100%;padding:40px 24px;margin:0 auto}
+.header{text-align:center;margin-bottom:36px}
+.logo{font-size:13px;color:#00ff41;letter-spacing:4px;text-transform:uppercase;margin-bottom:12px;font-weight:600}
+.header h1{font-size:32px;font-weight:700;margin-bottom:10px;background:linear-gradient(135deg,#00ff41,#00b8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header p{color:#888;font-size:14px;line-height:1.5}
+.tabs{display:flex;gap:0;margin-bottom:20px;background:#12121a;border-radius:12px;border:1px solid #1e1e2e;overflow:hidden}
+.tab-btn{flex:1;padding:14px 10px;border:none;background:transparent;color:#666;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.tab-btn:hover{color:#aaa}
+.tab-btn.active{color:#00ff41;background:#1a1a28}
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.search-box{background:#12121a;border:1px solid #1e1e2e;border-radius:16px;padding:24px;margin-bottom:16px}
+.search-box label{display:block;font-size:13px;color:#aaa;margin-bottom:8px;font-weight:500}
+.input-group{display:flex;gap:10px}
+.input-group input{flex:1;padding:14px 18px;border-radius:10px;border:1px solid #2a2a3e;background:#1a1a28;color:#e0e0e0;font-size:15px;outline:none;transition:border-color .2s}
+.input-group input:focus{border-color:#00ff41}
+.btn{padding:14px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,#00ff41,#00b8ff);color:#0a0a0f;font-weight:700;font-size:14px;cursor:pointer;transition:transform .15s,opacity .15s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);opacity:.9}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.spinner{display:none;width:18px;height:18px;border:2px solid #2a2a3e;border-top-color:#00ff41;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+.spinner.show{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-box{background:#12121a;border:1px solid #1e1e2e;border-radius:16px;padding:24px;display:none;margin-top:8px}
+.result-box.show{display:block}
+.result-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #1e1e2e}
+.status-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.status-icon.safe{background:rgba(0,255,65,.12);color:#00ff41}
+.status-icon.breached{background:rgba(255,50,50,.12);color:#ff4444}
+.status-icon.info{background:rgba(0,184,255,.12);color:#00b8ff}
+.status-icon.warn{background:rgba(255,180,0,.12);color:#ffb400}
+.result-email{font-size:14px;color:#888}
+.result-count{font-size:18px;font-weight:700}
+.info-msg{font-size:13px;color:#666;text-align:center;margin-top:14px;line-height:1.5}
+.info-msg a{color:#00b8ff}
+.section-title{font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:1px;margin:20px 0 12px}
+.breach-card{background:#1a1a28;border:1px solid #242440;border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.breach-card:hover{border-color:#3a3a5e}
+.breach-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.breach-name{font-weight:700;font-size:15px;color:#e0e0e0;display:flex;align-items:center;gap:8px}
+.breach-name .logo-img{width:18px;height:18px;border-radius:4px;object-fit:contain}
+.breach-domain{font-size:12px;color:#666;margin-top:2px}
+.breach-badges{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
+.badge-records{background:rgba(0,184,255,.12);color:#00b8ff}
+.badge-year{background:rgba(255,180,0,.12);color:#ffb400}
+.badge-risk-easy{background:rgba(255,50,50,.15);color:#ff4444}
+.badge-risk-plain{background:rgba(200,30,30,.2);color:#ff6666}
+.badge-risk-hard{background:rgba(255,180,0,.12);color:#ffb400}
+.badge-risk-unknown{background:rgba(120,120,120,.15);color:#888}
+.badge-industry{background:rgba(0,255,65,.08);color:#55ff77}
+.breach-details{display:none;margin-top:10px;padding-top:10px;border-top:1px solid #242440;font-size:13px;color:#999;line-height:1.6}
+.breach-details.open{display:block}
+.data-tags{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.data-tag{font-size:11px;padding:3px 8px;border-radius:5px;background:rgba(0,184,255,.08);color:#66ccff;border:1px solid rgba(0,184,255,.15)}
+.risk-score-box{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600}
+.risk-low{background:rgba(0,255,65,.1);color:#00ff41}
+.risk-medium{background:rgba(255,180,0,.1);color:#ffb400}
+.risk-high{background:rgba(255,50,50,.1);color:#ff4444}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.metric-card{background:#1a1a28;border:1px solid #242440;border-radius:10px;padding:14px;min-height:80px}
+.metric-card h4{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.show-all-btn{background:transparent;border:1px solid #2a2a3e;color:#888;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;display:block;margin:8px auto 0;transition:all .15s}
+.show-all-btn:hover{border-color:#00ff41;color:#00ff41}
+.footer{text-align:center;padding:32px 24px;color:#444;font-size:12px}
+.footer a{color:#555;text-decoration:none}
+.footer a:hover{color:#00ff41}
+.rate-note{font-size:11px;color:#555;text-align:right;margin-top:6px}
+.breaches-table{max-height:500px;overflow-y:auto}
+.breaches-table::-webkit-scrollbar{width:6px}
+.breaches-table::-webkit-scrollbar-track{background:#12121a}
+.breaches-table::-webkit-scrollbar-thumb{background:#2a2a3e;border-radius:4px}
+@media(max-width:600px){
+.container{padding:20px 12px}
+.header h1{font-size:24px}
+.search-box{padding:16px}
+.input-group{flex-direction:column}
+.btn{width:100%;text-align:center}
+.tabs{border-radius:8px}
+.tab-btn{font-size:12px;padding:12px 6px}
+.metrics-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-    <canvas id="matrix-canvas"></canvas>
-    <div class="container">
-        <div class="header">
-            <div class="logo">GeneralProtec</div>
-            <h1>¿Tu email está filtrado?</h1>
-            <p>Verifica si tu correo aparece en filtraciones de seguridad conocidas.</p>
-        </div>
-        <div class="search-box">
-            <label for="email">Tu email</label>
-            <div class="input-group">
-                <input type="email" id="email" placeholder="ejemplo@correo.com" autocomplete="off" />
-                <button class="btn" id="check-btn" onclick="check()">
-                    <span id="btn-text">Verificar</span>
-                    <span class="spinner" id="spinner"></span>
-                </button>
-            </div>
-        </div>
-        <div class="result-box" id="result">
-            <div class="result-header" id="result-header"></div>
-            <ul class="breach-list" id="breach-list"></ul>
-            <div class="info-msg" id="info-msg"></div>
-        </div>
-        <div class="footer">
-            <a href="https://generalprotec.com" target="_blank">GeneralProtec</a> &middot; Datos: XposedOrNot
-        </div>
-    </div>
+<canvas id="matrix-canvas"></canvas>
+<div class="container">
+<div class="header">
+<div class="logo">GeneralProtec</div>
+<h1>Breach Checker</h1>
+<p>Verifica si tu email o contraseña están en filtraciones conocidas.</p>
+</div>
+<div class="tabs">
+<button class="tab-btn active" onclick="switchTab('email')">Email</button>
+<button class="tab-btn" onclick="switchTab('password')">Contraseña</button>
+<button class="tab-btn" onclick="switchTab('breaches')">Filtraciones</button>
+</div>
+<div class="tab-content active" id="tab-email">
+<div class="search-box">
+<label for="email">Correo electrónico</label>
+<div class="input-group">
+<input type="email" id="email" placeholder="ejemplo@correo.com" autocomplete="off">
+<button class="btn" id="email-btn" onclick="checkEmail()">
+<span id="email-btn-text">Verificar</span>
+<span class="spinner" id="email-spinner"></span>
+</button>
+</div>
+</div>
+<div class="result-box" id="email-result">
+<div class="result-header" id="email-result-header"></div>
+<div id="email-breaches-container"></div>
+<div id="email-metrics-container"></div>
+<div class="info-msg" id="email-info"></div>
+</div>
+</div>
+<div class="tab-content" id="tab-password">
+<div class="search-box">
+<label for="password">Contraseña a verificar</label>
+<div class="input-group">
+<input type="password" id="password" placeholder="Escribe una contraseña..." autocomplete="off">
+<button class="btn" id="pwd-btn" onclick="checkPassword()">
+<span id="pwd-btn-text">Verificar</span>
+<span class="spinner" id="pwd-spinner"></span>
+</button>
+</div>
+<div class="rate-note">Tu contraseña nunca sale de tu navegador (k-anonymity).</div>
+</div>
+<div class="result-box" id="pwd-result">
+<div class="result-header" id="pwd-result-header"></div>
+<div class="info-msg" id="pwd-info"></div>
+</div>
+</div>
+<div class="tab-content" id="tab-breaches">
+<div class="search-box">
+<label for="domain">Filtrar por dominio (opcional)</label>
+<div class="input-group">
+<input type="text" id="domain" placeholder="ejemplo.com" autocomplete="off">
+<button class="btn" id="breaches-btn" onclick="fetchBreaches()">
+<span id="breaches-btn-text">Buscar</span>
+<span class="spinner" id="breaches-spinner"></span>
+</button>
+</div>
+</div>
+<div class="result-box" id="breaches-result">
+<div class="result-header" id="breaches-result-header"></div>
+<div class="breaches-table" id="breaches-list"></div>
+<div class="info-msg" id="breaches-info"></div>
+</div>
+</div>
+<div class="footer">
+<a href="https://generalprotec.com" target="_blank">GeneralProtec</a> &middot; Datos: <a href="https://xposedornot.com" target="_blank">XposedOrNot</a> &middot; Límite: 25 consultas/hora
+</div>
+</div>
+<script>
+const canvas=document.getElementById('matrix-canvas');
+const ctx=canvas.getContext('2d');
+let w,h,cols,drops;
+function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight;cols=Math.floor(w/14);drops=Array(cols).fill(1)}
+resize();window.addEventListener('resize',resize);
+setInterval(()=>{ctx.fillStyle='rgba(10,10,15,0.05)';ctx.fillRect(0,0,w,h);ctx.fillStyle='#00ff41';ctx.font='14px monospace';for(let i=0;i<drops.length;i++){ctx.fillText(String.fromCharCode(0x30A0+Math.random()*96),i*14,drops[i]*14);if(drops[i]*14>h&&Math.random()>0.975)drops[i]=0;drops[i]++}},50);
 
-    <script>
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
-        let w, h, cols, drops;
-        function resize() {
-            w = canvas.width = window.innerWidth;
-            h = canvas.height = window.innerHeight;
-            cols = Math.floor(w / 14);
-            drops = Array(cols).fill(1);
-        }
-        resize();
-        window.addEventListener('resize', resize);
-        setInterval(() => {
-            ctx.fillStyle = 'rgba(10,10,15,0.05)';
-            ctx.fillRect(0, 0, w, h);
-            ctx.fillStyle = '#00ff41';
-            ctx.font = '14px monospace';
-            for (let i = 0; i < drops.length; i++) {
-                ctx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), i * 14, drops[i] * 14);
-                if (drops[i] * 14 > h && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
-            }
-        }, 50);
+function switchTab(n){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.querySelector('.tab-btn:nth-child('+(n==='email'?1:n==='password'?2:3)+')').classList.add('active');document.getElementById('tab-'+n).classList.add('active')}
+const api=p=>fetch('/.netlify/functions/check?'+new URLSearchParams(p)).then(r=>r.json());
+function ld(b,s,l,v){document.getElementById(b).disabled=v;document.getElementById(s).textContent=v?'Verificando...':'Verificar';document.getElementById(l).classList.toggle('show',v)}
+function riskBadge(r){return r==='easytocrack'?'badge-risk-easy':r==='plaintext'?'badge-risk-plain':r==='hardtocrack'?'badge-risk-hard':'badge-risk-unknown'}
+function riskLabel(r){return r==='easytocrack'?'Facil':r==='plaintext'?'TextoPlano':r==='hardtocrack'?'HashSeguro':'Desconocido'}
+function fmt(n){if(!n)return'';if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(0)+'K';return n}
+function td(e){const d=e.currentTarget.querySelector('.breach-details');if(d)d.classList.toggle('open')}
+function sa(b){const c=b.parentElement;for(let i=0;i<c.children.length;i++){const ch=c.children[i];if(ch.classList.contains('breach-card')&&ch.style.display==='none')ch.style.display=''};b.style.display='none'}
 
-        async function check() {
-            const input = document.getElementById('email');
-            const email = input.value.trim().toLowerCase();
-            const btn = document.getElementById('check-btn');
-            const btnText = document.getElementById('btn-text');
-            const spinner = document.getElementById('spinner');
+async function checkEmail(){
+const i=document.getElementById('email'),e=i.value.trim().toLowerCase();
+if(!e||!e.includes('@')){i.style.borderColor='#ff3232';setTimeout(()=>i.style.borderColor='',1500);return}
+ld('email-btn','email-btn-text','email-spinner',true);document.getElementById('email-result').classList.remove('show');
+try{
+const d=await api({email:e,analytics:'1'});
+if(!d.ok)throw new Error(d.error);
+const h=document.getElementById('email-result-header'),c=document.getElementById('email-breaches-container'),m=document.getElementById('email-metrics-container'),info=document.getElementById('email-info');
+if(d.total===0){
+h.innerHTML='<div class="status-icon safe">&#x2713;</div><div><div class="result-count">Sin filtraciones</div><div class="result-email">'+e+'</div></div>';
+c.innerHTML='';m.innerHTML='';info.innerHTML='Tu email no aparece en filtraciones conocidas.';
+document.getElementById('email-result').classList.add('show');return}
+h.innerHTML='<div class="status-icon breached">&#x26A0;</div><div><div class="result-count">'+d.total+' filtraci&#243;n(es)</div><div class="result-email">'+e+'</div></div>';
+const dd=d.analytics?.ExposedBreaches?.breaches_details||[],dm={};dd.forEach(x=>{dm[x.breach]=x});
+let ch='<div class="section-title">Filtraciones encontradas</div>';
+const mv=12,sa2=d.total<=mv;
+d.breaches.forEach((n,i)=>{
+const x=dm[n],rc=x?riskBadge(x.password_risk):'',rl=x?riskLabel(x.password_risk):'',rec=x?fmt(x.xposed_records):'',yr=x?x.xposed_date:'',ind=x?x.industry:'',dom=x?x.domain:'',exp=x?x.xposed_data:'',desc=x?x.details:'',logo=x?'https://xposedornot.com/static/logos/'+x.logo:'',h2=!sa2&&i>=mv?' style="display:none"':'';
+ch+='<div class="breach-card" onclick="td(event)"'+h2+'><div class="breach-card-header"><div><div class="breach-name">'+(logo?'<img class="logo-img" src="'+logo+'" alt="" onerror="this.style.display=\'none\'">':'')+n+'</div>'+(dom?'<div class="breach-domain">'+dom+'</div>':'')+'</div><div class="breach-badges">'+(rec?'<span class="badge badge-records">'+rec+'</span>':'')+(yr?'<span class="badge badge-year">'+yr+'</span>':'')+(ind?'<span class="badge badge-industry">'+ind+'</span>':'')+(rc?'<span class="badge '+rc+'">'+rl+'</span>':'')+'</div></div>'+(exp?'<div class="data-tags">'+exp.split(';').map(t=>'<span class="data-tag">'+t.trim()+'</span>').join('')+'</div>':'')+(desc?'<div class="breach-details"><strong>Detalles:</strong> '+desc+'</div>':'')+'</div>'});
+if(!sa2)ch+='<button class="show-all-btn" onclick="sa(this)">Mostrar todas ('+d.total+')</button>';
+c.innerHTML=ch;
+const a=d.analytics;
+if(a){let mh='<div class="section-title">An&#225;lisis de riesgo</div><div class="metrics-grid">';
+const rk=a.BreachMetrics?.risk?.[0];
+if(rk){const lv=(rk.risk_label||'').toLowerCase(),cls=lv==='low'?'risk-low':lv==='medium'?'risk-medium':'risk-high';mh+='<div class="metric-card"><h4>Nivel de riesgo</h4><div class="risk-score-box '+cls+'">'+rk.risk_label+' &middot; '+rk.risk_score+'/10</div></div>'}
+const pw=a.BreachMetrics?.passwords_strength?.[0];
+if(pw){mh+='<div class="metric-card"><h4>Fortaleza de contrase&#241;as</h4>';const items=[{label:'Texto plano',key:'PlainText',color:'#ff4444'},{label:'F&#225;cil de romper',key:'EasyToCrack',color:'#ff8800'},{label:'Hash seguro',key:'StrongHash',color:'#00ff41'},{label:'Desconocido',key:'Unknown',color:'#888'}];const mv2=Math.max(...items.map(i=>pw[i.key]||0),1);items.forEach(it=>{const v=pw[it.key]||0,pct=Math.max(4,(v/mv2)*100);mh+='<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px"><span style="width:90px;flex-shrink:0;color:#888">'+it.label+'</span><div style="flex:1;height:14px;background:#1e1e2e;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+it.color+';border-radius:4px;min-width:4px"></div></div><span style="color:#aaa;width:30px;text-align:right">'+v+'</span></div>'});mh+='</div>'}
+const ind2=a.BreachMetrics?.industry?.[0];
+if(ind2&&ind2.length>0){const v=ind2.filter(i=>i[1]>0).slice(0,6);if(v.length>0){const mx=Math.max(...v.map(i=>i[1]),1);mh+='<div class="metric-card"><h4>Industrias m&#225;s afectadas</h4>';v.forEach(it=>{const pct=Math.max(4,(it[1]/mx)*100);mh+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px"><span style="width:90px;flex-shrink:0;color:#888">'+it[0]+'</span><div style="flex:1;height:14px;background:#1e1e2e;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#00b8ff,#00ff41);border-radius:4px;min-width:4px"></div></div><span style="color:#aaa;width:30px;text-align:right">'+it[1]+'</span></div>'});mh+='</div>'}}
+const xd=a.BreachMetrics?.xposed_data?.[0];
+if(xd&&xd.children){const tags=[];xd.children.forEach(l2=>{if(l2.children)l2.children.forEach(l3=>{if(l3.name)tags.push(l3.name.replace('data_','').replace(/_/g,' '))})});if(tags.length>0){mh+='<div class="metric-card"><h4>Tipos de datos expuestos</h4><div class="data-tags">'+tags.map(t=>'<span class="data-tag">'+t+'</span>').join('')+'</div></div>'}}
+mh+='</div>';m.innerHTML=mh}
+info.innerHTML='Cambia las contrase&#241;as afectadas. Usa autenticaci&#243;n en dos pasos.';
+document.getElementById('email-result').classList.add('show')}
+catch(e){
+document.getElementById('email-result-header').innerHTML='<div class="status-icon info">&#x2139;</div><div><div class="result-count">Error</div><div class="result-email">'+e.message+'</div></div>';
+document.getElementById('email-info').innerHTML='No se pudo consultar. <a href="https://haveibeenpwned.com" target="_blank">Have I Been Pwned</a>';document.getElementById('email-result').classList.add('show')}
+finally{ld('email-btn','email-btn-text','email-spinner',false)}}
 
-            if (!email || !email.includes('@')) {
-                input.style.borderColor = '#ff3232';
-                setTimeout(() => input.style.borderColor = '', 1500);
-                return;
-            }
+async function checkPassword(){
+const i=document.getElementById('password'),p=i.value.trim();
+if(!p){i.style.borderColor='#ff3232';setTimeout(()=>i.style.borderColor='',1500);return}
+ld('pwd-btn','pwd-btn-text','pwd-spinner',true);document.getElementById('pwd-result').classList.remove('show');
+try{
+if(typeof keccak_512==='undefined')throw new Error('Librer&#237;a de hash no cargada');
+const hash=keccak_512(p),prefix=hash.substring(0,10);
+const d=await api({password:prefix});
+if(!d.ok)throw new Error(d.error);
+const h=document.getElementById('pwd-result-header'),info=document.getElementById('pwd-info');
+if(!d.found){
+h.innerHTML='<div class="status-icon safe">&#x2713;</div><div><div class="result-count">No encontrada</div><div class="result-email">Esta contrase&#241;a no aparece en filtraciones</div></div>';
+info.innerHTML='Buena noticia. La contrase&#241;a no se ha filtrado en ninguna brecha conocida.'}
+else{
+const r=d.result;
+h.innerHTML='<div class="status-icon breached">&#x26A0;</div><div><div class="result-count">&#161;Filtrada!</div><div class="result-email">Aparece '+parseInt(r.count).toLocaleString()+' veces</div></div>';
+let ch='';if(r.char){const parts=r.char.split(';');parts.forEach(p=>{const[k,v]=p.split(':');const labels={D:'D&#237;gitos',A:'Letras',S:'Especiales',L:'Longitud'};ch+='<div class="rate-note" style="text-align:left"><strong>'+labels[k]+':</strong> '+v+'</div>'})}
+info.innerHTML=ch+'<br>No uses esta contrase&#241;a. C&#225;mbiala inmediatamente.'}
+document.getElementById('pwd-result').classList.add('show')}
+catch(e){
+document.getElementById('pwd-result-header').innerHTML='<div class="status-icon info">&#x2139;</div><div><div class="result-count">Error</div><div class="result-email">'+e.message+'</div></div>';
+document.getElementById('pwd-info').textContent='Intenta de nuevo m&#225;s tarde.';document.getElementById('pwd-result').classList.add('show')}
+finally{ld('pwd-btn','pwd-btn-text','pwd-spinner',false)}}
 
-            btn.disabled = true;
-            btnText.textContent = 'Verificando...';
-            spinner.classList.add('show');
-            document.getElementById('result').classList.remove('show');
+async function fetchBreaches(){
+const i=document.getElementById('domain'),dom=i.value.trim().toLowerCase();
+ld('breaches-btn','breaches-btn-text','breaches-spinner',true);document.getElementById('breaches-result').classList.remove('show');
+try{
+const params={breaches:'1'};if(dom)params.domain=dom;
+const d=await api(params);
+if(!d.ok)throw new Error(d.error);
+const h=document.getElementById('breaches-result-header'),list=document.getElementById('breaches-list'),info=document.getElementById('breaches-info');
+h.innerHTML='<div class="status-icon '+(d.total>0?'warn':'safe')+'">'+(d.total>0?'&#x26A0;':'&#x2713;')+'</div><div><div class="result-count">'+d.total+' filtraci&#243;n(es)'+(dom?' para '+dom:'')+'</div><div class="result-email">Base de datos XposedOrNot</div></div>';
+if(d.total===0){list.innerHTML='';info.innerHTML='No hay filtraciones'+(dom?' para '+dom:'')+'.';document.getElementById('breaches-result').classList.add('show');return}
+let lh='';d.breaches.slice(0,200).forEach(b=>{
+const rec=fmt(b.exposedRecords),yr=b.breachedDate?b.breachedDate.substring(0,4):'',data=(b.exposedData||[]).join(', ');
+lh+='<div class="breach-card" onclick="td(event)"><div class="breach-card-header"><div><div class="breach-name">'+(b.logo?'<img class="logo-img" src="'+b.logo+'" alt="" onerror="this.style.display=\'none\'">':'')+b.breachID+'</div><div class="breach-domain">'+b.domain+'</div></div><div class="breach-badges">'+(rec?'<span class="badge badge-records">'+rec+'</span>':'')+(yr?'<span class="badge badge-year">'+yr+'</span>':'')+'<span class="badge badge-industry">'+b.industry+'</span></div></div>'+(data?'<div class="data-tags">'+data.split(', ').map(t=>'<span class="data-tag">'+t+'</span>').join('')+'</div>':'')+'<div class="breach-details"><strong>Descripci&#243;n:</strong> '+(b.exposureDescription||'Sin descripci&#243;n')+'</div></div>'});
+list.innerHTML=lh;info.innerHTML='';document.getElementById('breaches-result').classList.add('show')}
+catch(e){
+document.getElementById('breaches-result-header').innerHTML='<div class="status-icon info">&#x2139;</div><div><div class="result-count">Error</div><div class="result-email">'+e.message+'</div></div>';
+document.getElementById('breaches-info').textContent='Intenta de nuevo.';document.getElementById('breaches-result').classList.add('show')}
+finally{ld('breaches-btn','breaches-btn-text','breaches-spinner',false)}}
 
-            try {
-                const res = await fetch(`/.netlify/functions/check?email=${encodeURIComponent(email)}`);
-                const data = await res.json();
-
-                if (!data.ok) throw new Error(data.error);
-
-                const header = document.getElementById('result-header');
-                const list = document.getElementById('breach-list');
-                const info = document.getElementById('info-msg');
-
-                if (data.breaches.length === 0) {
-                    header.innerHTML = `
-                        <div class="status-icon safe">&#x2713;</div>
-                        <div>
-                            <div class="result-count">No se encontraron filtraciones</div>
-                            <div class="result-email">${email}</div>
-                        </div>
-                    `;
-                    list.innerHTML = '';
-                    info.textContent = 'Buenas noticias. No aparece en filtraciones conocidas.';
-                } else {
-                    header.innerHTML = `
-                        <div class="status-icon breached">&#x26A0;</div>
-                        <div>
-                            <div class="result-count">${data.breaches.length} filtraci&oacute;n(es)</div>
-                            <div class="result-email">${email}</div>
-                        </div>
-                    `;
-                    list.innerHTML = data.breaches.map(n =>
-                        `<li class="breach-item"><span class="breach-dot"></span>${n}</li>`
-                    ).join('');
-                    info.innerHTML =
-                        'Cambia las contrase&ntilde;as afectadas. Usa autenticaci&oacute;n en dos pasos.';
-                }
-                document.getElementById('result').classList.add('show');
-            } catch (e) {
-                document.getElementById('result-header').innerHTML = `
-                    <div class="status-icon info">&#x2139;</div>
-                    <div>
-                        <div class="result-count">Error en la consulta</div>
-                        <div class="result-email">${e.message}</div>
-                    </div>
-                `;
-                document.getElementById('breach-list').innerHTML = '';
-                document.getElementById('info-msg').innerHTML =
-                    `Puedes consultar directamente en <a href="https://haveibeenpwned.com" target="_blank" style="color:#00b8ff">Have I Been Pwned</a>`;
-                document.getElementById('result').classList.add('show');
-            } finally {
-                btn.disabled = false;
-                btnText.textContent = 'Verificar';
-                spinner.classList.remove('show');
-            }
-        }
-
-        document.getElementById('email').addEventListener('keydown', e => {
-            if (e.key === 'Enter') check();
-        });
-    </script>
+document.getElementById('email').addEventListener('keydown',e=>{if(e.key==='Enter')checkEmail()});
+document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')checkPassword()});
+document.getElementById('domain').addEventListener('keydown',e=>{if(e.key==='Enter')fetchBreaches()});
+</script>
 </body>
 </html>
