@@ -551,8 +551,38 @@ document.querySelectorAll('.tab-btn')[idx].classList.add('active');
 document.getElementById('tab-'+n).classList.add('active');
 if(n==='history')renderHistory()}
 
-// ===== API =====
-const API_BASE=window.location.protocol==='file:'||window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'?'https://generalprotec.netlify.app':'';const api=p=>fetch(API_BASE+'/.netlify/functions/check?'+new URLSearchParams(p)).then(function(r){if(!r.ok)throw new Error('Error del servidor ('+r.status+')');return r.json()});
+// ===== API (directo a XposedOrNot, sin Netlify Functions) =====
+async function api(p){
+try{
+if(p.password){
+const prefix=p.password.toLowerCase();
+const r=await fetch('https://passwords.xposedornot.com/api/v1/pass/anon/'+prefix);
+const d=await r.json();
+if(d.Error==='Not found')return{ok:true,type:'password',found:false};
+return{ok:true,type:'password',found:true,result:d.SearchPassAnon}}
+if(p.breaches==='1'){
+const url=p.domain?'https://api.xposedornot.com/v1/breaches?domain='+encodeURIComponent(p.domain):'https://api.xposedornot.com/v1/breaches';
+const r=await fetch(url);const d=await r.json();
+const list=d.exposedBreaches||[];
+return{ok:true,type:'breaches',breaches:list,total:list.length}}
+if(p.email){
+const email=p.email.toLowerCase();
+const r=await fetch('https://api.xposedornot.com/v1/check-email/'+encodeURIComponent(email));
+const cd=await r.json();
+const breaches=(cd.breaches||[]).flat();
+const nf=cd.Error==='Not found';
+let al=null;
+if(!nf&&breaches.length>0&&p.analytics!=='0'){try{const ar=await fetch('https://api.xposedornot.com/v1/breach-analytics?email='+encodeURIComponent(email));al=await ar.json()}catch(e){}}
+return{ok:true,type:'email',email,breaches,total:breaches.length,analytics:al}}
+if(p.search){
+const q=p.search.trim().toLowerCase();
+const r=await fetch('https://api.xposedornot.com/v1/breaches');
+const d=await r.json();
+const list=d.exposedBreaches||[];
+const m=list.filter(function(b){const n=(b.breachID||'').toLowerCase(),desc=(b.exposureDescription||'').toLowerCase(),dom=(b.domain||'').toLowerCase(),t=(b.exposedData||[]).join(' ').toLowerCase();return n.includes(q)||desc.includes(q)||dom.includes(q)||t.includes(q)});
+return{ok:true,type:'search',query:q,breaches:m,total:m.length}}
+return{ok:false,error:'Par&aacute;metros inv&aacute;lidos'}}
+catch(e){return{ok:false,error:e.message}}}
 
 // ===== HELPERS =====
 function ld(b,s,l,v,t){document.getElementById(b).disabled=v;document.getElementById(s).textContent=v?(t||'Verificando...'):'Verificar';document.getElementById(l).classList.toggle('show',v)}
