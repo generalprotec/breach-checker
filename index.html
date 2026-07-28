@@ -12,6 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://generalprotec.netlify.app/">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.9.3/sha3.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a28;--border:#1e1e2e;--border2:#2a2a3e;--border3:#242440;--text:#e0e0e0;--text2:#ccc;--text3:#aaa;--text4:#888;--accent:#00ff41;--accent2:#00b8ff;--danger:#ff4444;--warn:#ffb400;--success:#00ff41;--card:#1a1a28;--shadow:0 4px 24px rgba(0,0,0,.4)}
 [data-theme="light"]{--bg:#f5f5f7;--bg2:#fff;--bg3:#f0f0f4;--border:#e0e0e6;--border2:#d0d0d8;--border3:#e8e8ee;--text:#1a1a2e;--text2:#333;--text3:#555;--text4:#777;--accent:#00aa30;--accent2:#0088cc;--danger:#cc2222;--warn:#cc9900;--success:#00aa30;--card:#fff;--shadow:0 4px 24px rgba(0,0,0,.08)}
@@ -188,6 +189,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 .domain-stat{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
 .domain-stat .ds-value{font-size:24px;font-weight:800;color:var(--accent)}
 .domain-stat .ds-label{font-size:11px;color:var(--text4);text-transform:uppercase;margin-top:4px}
+textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-size:14px;font-family:inherit;resize:vertical;transition:border-color .3s;outline:none}
+textarea:focus{border-color:var(--accent2)}
 /* Security Tips */
 .tip-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:14px;transition:all .3s}
 .tip-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,255,65,.08)}
@@ -233,7 +236,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 <div class="logo"><img src="logo.jpg" alt="GeneralProtec"></div>
 <h1>Breach Checker</h1>
 <p>Verifica si tu email o contrase&ntilde;a est&aacute;n en filtraciones conocidas.</p>
-<div class="subtitle-badge">Powered by XposedOrNot &middot; 100% Gratuito</div>
+
 </div>
 
 <div class="stats-bar" id="statsBar">
@@ -251,6 +254,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 <button class="tab-btn" onclick="switchTab('domain')"><span class="tab-icon">&#127760;</span>Dominios</button>
 <button class="tab-btn" onclick="switchTab('tips')"><span class="tab-icon">&#128161;</span>Seguridad</button>
 <button class="tab-btn" onclick="switchTab('history')"><span class="tab-icon">&#128214;</span>Historial</button>
+<button class="tab-btn" onclick="switchTab('search')"><span class="tab-icon">&#128269;</span>Usuario/Tel</button>
+<button class="tab-btn" onclick="switchTab('scanner')"><span class="tab-icon">&#128220;</span>Esc&aacute;ner</button>
+<button class="tab-btn" onclick="switchTab('map')"><span class="tab-icon">&#127758;</span>Mapa</button>
 </div>
 
 <!-- TAB: EMAIL -->
@@ -444,12 +450,62 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 <div class="info-msg">El historial se almacena localmente en tu navegador y nunca se env&iacute;a a servidores externos.</div>
 </div>
 
+<!-- TAB: SEARCH (USERNAME/PHONE) -->
+<div class="tab-content" id="tab-search">
+<div class="search-box">
+<label for="searchQuery">Usuario o tel&eacute;fono</label>
+<div class="input-group">
+<input type="text" id="searchQuery" placeholder="nombredeusuario o +34123456789">
+<button class="btn" id="search-btn" onclick="searchBreaches()">
+<span id="search-btn-text">Buscar</span>
+<span class="spinner" id="search-spinner"></span>
+</button>
+</div>
+<div class="info-msg">Busca en los metadatos de filtraciones conocidas. No verifica credenciales espec&iacute;ficas.</div>
+</div>
+<div class="result-box" id="search-result">
+<div class="result-header" id="search-result-header"></div>
+<div id="search-list"></div>
+<div class="info-bar" id="search-info"></div>
+</div>
+</div>
+
+<!-- TAB: SCANNER -->
+<div class="tab-content" id="tab-scanner">
+<div class="search-box">
+<label for="scanText">Pega un texto para escanear datos personales</label>
+<textarea id="scanText" rows="5" placeholder="Pega aqu&iacute; un texto, log, email, documento..."></textarea>
+<button class="btn" id="scan-btn" onclick="scanPersonalData()">
+<span id="scan-btn-text">Escanear</span>
+<span class="spinner" id="scan-spinner"></span>
+</button>
+</div>
+<div class="result-box" id="scan-result">
+<div class="result-header" id="scan-result-header"></div>
+<div id="scan-list"></div>
+<div class="info-bar" id="scan-info"></div>
+</div>
+</div>
+
+<!-- TAB: MAP -->
+<div class="tab-content" id="tab-map">
+<div class="search-box">
+<label>Mapa de filtraciones conocidas</label>
+<p style="font-size:13px;color:var(--text4);margin-bottom:12px">Visualizaci&oacute;n geogr&aacute;fica basada en dominios de filtraciones.</p>
+<button class="btn" id="map-btn" onclick="loadMap()">
+<span id="map-btn-text">Cargar mapa</span>
+<span class="spinner" id="map-spinner"></span>
+</button>
+</div>
+<div id="map-container" style="height:500px;border-radius:12px;overflow:hidden;display:none"></div>
+<div class="info-bar" id="map-info"></div>
+</div>
+
 <div class="footer">
-<a href="https://generalprotec.com" target="_blank">GeneralProtec</a> &middot; Datos: <a href="https://xposedornot.com" target="_blank">XposedOrNot</a>
+<a href="https://generalprotec.com" target="_blank">GeneralProtec</a> &middot; Herramienta de ciberseguridad gratuita
 <div class="footer-links">
 <a href="https://generalprotec.com" target="_blank">Sitio web</a>
 <a href="https://generalprotec.netlify.app/" target="_blank">Breach Checker</a>
-<a href="https://xposedornot.com" target="_blank">XposedOrNot</a>
 </div>
 <div style="margin-top:16px;font-size:11px">&copy; 2024 GeneralProtec &middot; Herramienta de ciberseguridad gratuita</div>
 </div>
@@ -457,6 +513,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let lastData=null,batchEmails=[],batchIdx=0;
 
@@ -488,7 +545,7 @@ setTimeout(()=>{t.style.animation='slideOut .3s ease forwards';setTimeout(()=>t.
 function switchTab(n){
 document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
 document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-const tabs=['email','password','generator','breaches','domain','tips','history'];
+const tabs=['email','password','generator','breaches','domain','tips','history','search','scanner','map'];
 const idx=tabs.indexOf(n);
 document.querySelectorAll('.tab-btn')[idx].classList.add('active');
 document.getElementById('tab-'+n).classList.add('active');
@@ -498,7 +555,7 @@ if(n==='history')renderHistory()}
 const API_BASE=window.location.protocol==='file:'||window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'?'https://generalprotec.netlify.app':'';const api=p=>fetch(API_BASE+'/.netlify/functions/check?'+new URLSearchParams(p)).then(function(r){if(!r.ok)throw new Error('Error del servidor ('+r.status+')');return r.json()});
 
 // ===== HELPERS =====
-function ld(b,s,l,v){document.getElementById(b).disabled=v;document.getElementById(s).textContent=v?'Verificando...':'Verificar';document.getElementById(l).classList.toggle('show',v)}
+function ld(b,s,l,v,t){document.getElementById(b).disabled=v;document.getElementById(s).textContent=v?(t||'Verificando...'):'Verificar';document.getElementById(l).classList.toggle('show',v)}
 function riskBadge(r){return r==='easytocrack'?'badge-risk-easy':r==='plaintext'?'badge-risk-plain':r==='hardtocrack'?'badge-risk-hard':'badge-risk-unknown'}
 function riskLabel(r){return tr(r)}
 function fmt(n){if(!n)return'';if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(0)+'K';return n}
@@ -629,8 +686,8 @@ function csvEsc(s){return'"'+String(s||'').replace(/"/g,'""').replace(/\n/g,' ')
 function exportJSON(){if(!lastData)return;const b=new Blob([JSON.stringify(lastData,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='breach-report-'+Date.now()+'.json';a.click();URL.revokeObjectURL(a.href);toast('JSON exportado','success')}
 function exportTXT(){if(!lastData)return;let txt='=== GeneralProtec Breach Report ===\nFecha: '+new Date().toLocaleString()+'\nEmail: '+lastData.email+'\nTotal breaches: '+lastData.total+'\n\nBreaches:\n';(lastData.breaches||[]).forEach(function(n){txt+='  - '+n+'\n'});var dd=lastData.analytics&&lastData.analytics.ExposedBreaches&&lastData.analytics.ExposedBreaches.breaches_details||[];dd.forEach(function(d){txt+='\n  '+d.breach+':\n    Domain: '+d.domain+'\n    Date: '+d.xposed_date+'\n    Records: '+d.xposed_records+'\n    Data: '+d.xposed_data+'\n    Risk: '+d.password_risk+'\n    Description: '+d.details+'\n'});var b=new Blob([txt],{type:'text/plain'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='breach-report-'+Date.now()+'.txt';a.click();URL.revokeObjectURL(a.href);toast('TXT exportado','success')}
 function exportCSV(){if(!lastData)return;var csv='Breach,Domain,Date,Records,Risk,Data,Description\n';var dd=lastData.analytics&&lastData.analytics.ExposedBreaches&&lastData.analytics.ExposedBreaches.breaches_details||[];if(dd.length>0){dd.forEach(function(d){csv+=csvEsc(d.breach)+','+csvEsc(d.domain)+','+csvEsc(d.xposed_date)+','+csvEsc(d.xposed_records)+','+csvEsc(d.password_risk)+','+csvEsc(d.xposed_data)+','+csvEsc(d.details)+'\n'})}else{(lastData.breaches||[]).forEach(function(n){csv+=csvEsc(n)+',,,,,\n'})}var b=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='breach-report-'+Date.now()+'.csv';a.click();URL.revokeObjectURL(a.href);toast('CSV exportado','success')}
-function exportHTML(){if(!lastData)return;var dd=lastData.analytics&&lastData.analytics.ExposedBreaches&&lastData.analytics.ExposedBreaches.breaches_details||[];var h='<html><head><meta charset=UTF-8><title>GeneralProtec Report</title><style>body{background:#0a0a0f;color:#e0e0e0;font-family:Arial,sans-serif;padding:40px}h1{color:#00ff41;text-align:center}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#1a1a28;color:#00b8ff;padding:12px;text-align:left;border-bottom:2px solid #333}td{padding:10px;border-bottom:1px solid #222;font-size:13px}.footer{text-align:center;color:#666;margin-top:30px;font-size:12px}.risk{text-align:center;color:#888}.safe{color:#00ff41}.danger{color:#ff4444}</style></head><body><h1>GeneralProtec - Breach Report</h1><p class=risk>Email: <strong>'+lastData.email+'</strong> | Filtraciones: '+lastData.total+' | '+new Date().toLocaleString()+'</p>';if(dd.length>0){h+='<table><thead><tr><th>#</th><th>Breach</th><th>Dominio</th><th>Fecha</th><th>Registros</th><th>Riesgo</th><th>Datos</th></tr></thead><tbody>';dd.forEach(function(d,i){h+='<tr><td>'+(i+1)+'</td><td>'+d.breach+'</td><td>'+d.domain+'</td><td>'+d.xposed_date+'</td><td>'+fmt(d.xposed_records)+'</td><td class='+(d.password_risk==='plaintext'?'danger':d.password_risk==='easytocrack'?'danger':'safe')+'>'+(d.password_risk||'N/A')+'</td><td>'+d.xposed_data+'</td></tr>'});h+='</tbody></table>'}else{h+='<p class=safe style=text-align:center;font-size:18px>No se encontraron filtraciones.</p>'}h+='<p class=footer>GeneralProtec - powered by XposedOrNot</p></body></html>';var b=new Blob([h],{type:'text/html'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='breach-report-'+Date.now()+'.html';a.click();URL.revokeObjectURL(a.href);toast('HTML exportado','success')}
-function exportPDF(){if(!lastData)return;var dd=lastData.analytics&&lastData.analytics.ExposedBreaches&&lastData.analytics.ExposedBreaches.breaches_details||[];var h='<html><head><meta charset=UTF-8><title>Reporte</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;padding:30px}h1{font-size:20px;text-align:center;border-bottom:2px solid #333;padding-bottom:10px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#eee;padding:8px;text-align:left;border-bottom:2px solid #ccc}td{padding:6px 8px;border-bottom:1px solid #ddd}.footer{text-align:center;color:#999;margin-top:20px;font-size:10px}</style></head><body><h1>GeneralProtec - Reporte de Filtraciones</h1><p style=text-align:center;color:#555>Email: <strong>'+lastData.email+'</strong> | Encontradas: '+lastData.total+' | '+new Date().toLocaleString()+'</p>';if(dd.length>0){h+='<table><thead><tr><th>#</th><th>Breach</th><th>Dominio</th><th>Fecha</th><th>Registros</th><th>Riesgo</th><th>Datos</th></tr></thead><tbody>';dd.forEach(function(d,i){h+='<tr><td>'+(i+1)+'</td><td>'+d.breach+'</td><td>'+d.domain+'</td><td>'+d.xposed_date+'</td><td>'+fmt(d.xposed_records)+'</td><td>'+(d.password_risk||'N/A')+'</td><td>'+d.xposed_data+'</td></tr>'});h+='</tbody></table>'}else{h+='<p style=color:#00aa30;text-align:center;font-size:16px>No se encontraron filtraciones.</p>'}h+='<p class=footer>GeneralProtec - powered by XposedOrNot</p></body></html>';var pw=window.open('','_blank');pw.document.write(h);pw.document.close();setTimeout(function(){pw.print()},500);toast('PDF abierto para imprimir','info')}
+function exportHTML(){if(!lastData)return;var dd=lastData.analytics&&lastData.analytics.ExposedBreaches&&lastData.analytics.ExposedBreaches.breaches_details||[];var h='<html><head><meta charset=UTF-8><title>GeneralProtec Report</title><style>body{background:#0a0a0f;color:#e0e0e0;font-family:Arial,sans-serif;padding:40px}h1{color:#00ff41;text-align:center}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#1a1a28;color:#00b8ff;padding:12px;text-align:left;border-bottom:2px solid #333}td{padding:10px;border-bottom:1px solid #222;font-size:13px}.footer{text-align:center;color:#666;margin-top:30px;font-size:12px}.risk{text-align:center;color:#888}.safe{color:#00ff41}.danger{color:#ff4444}</style></head><body><h1>GeneralProtec - Breach Report</h1><p class=risk>Email: <strong>'+lastData.email+'</strong> | Filtraciones: '+lastData.total+' | '+new Date().toLocaleString()+'</p>';if(dd.length>0){h+='<table><thead><tr><th>#</th><th>Breach</th><th>Dominio</th><th>Fecha</th><th>Registros</th><th>Riesgo</th><th>Datos</th></tr></thead><tbody>';dd.forEach(function(d,i){h+='<tr><td>'+(i+1)+'</td><td>'+d.breach+'</td><td>'+d.domain+'</td><td>'+d.xposed_date+'</td><td>'+fmt(d.xposed_records)+'</td><td class='+(d.password_risk==='plaintext'?'danger':d.password_risk==='easytocrack'?'danger':'safe')+'>'+(d.password_risk||'N/A')+'</td><td>'+d.xposed_data+'</td></tr>'});h+='</tbody></table>'}else{h+='<p class=safe style=text-align:center;font-size:18px>No se encontraron filtraciones.</p>'}h+='<p class=footer>GeneralProtec</p></body></html>';var b=new Blob([h],{type:'text/html'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='breach-report-'+Date.now()+'.html';a.click();URL.revokeObjectURL(a.href);toast('HTML exportado','success')}
+function exportPDF(){if(!lastData)return;var dd=lastData.analytics&&lastData.analytics.ExposedBreaches&&lastData.analytics.ExposedBreaches.breaches_details||[];var h='<html><head><meta charset=UTF-8><title>Reporte</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;padding:30px}h1{font-size:20px;text-align:center;border-bottom:2px solid #333;padding-bottom:10px}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#eee;padding:8px;text-align:left;border-bottom:2px solid #ccc}td{padding:6px 8px;border-bottom:1px solid #ddd}.footer{text-align:center;color:#999;margin-top:20px;font-size:10px}</style></head><body><h1>GeneralProtec - Reporte de Filtraciones</h1><p style=text-align:center;color:#555>Email: <strong>'+lastData.email+'</strong> | Encontradas: '+lastData.total+' | '+new Date().toLocaleString()+'</p>';if(dd.length>0){h+='<table><thead><tr><th>#</th><th>Breach</th><th>Dominio</th><th>Fecha</th><th>Registros</th><th>Riesgo</th><th>Datos</th></tr></thead><tbody>';dd.forEach(function(d,i){h+='<tr><td>'+(i+1)+'</td><td>'+d.breach+'</td><td>'+d.domain+'</td><td>'+d.xposed_date+'</td><td>'+fmt(d.xposed_records)+'</td><td>'+(d.password_risk||'N/A')+'</td><td>'+d.xposed_data+'</td></tr>'});h+='</tbody></table>'}else{h+='<p style=color:#00aa30;text-align:center;font-size:16px>No se encontraron filtraciones.</p>'}h+='<p class=footer>GeneralProtec</p></body></html>';var pw=window.open('','_blank');pw.document.write(h);pw.document.close();setTimeout(function(){pw.print()},500);toast('PDF abierto para imprimir','info')}
 function shareResults(){if(!lastData)return;var text='GeneralProtec Breach Report\nEmail: '+lastData.email+'\nFiltraciones: '+lastData.total+'\n\nhttps://generalprotec.netlify.app/';if(navigator.share){navigator.share({title:'Breach Report - GeneralProtec',text:text})}else{navigator.clipboard.writeText(text).then(function(){toast('Enlace copiado','success')})}}
 
 // ===== HISTORY =====
@@ -775,7 +832,7 @@ const params={breaches:'1'};if(dom)params.domain=dom;
 const d=await api(params);
 if(!d.ok)throw new Error(d.error);
 const h=document.getElementById('breaches-result-header'),list=document.getElementById('breaches-list'),info=document.getElementById('breaches-info');
-h.innerHTML='<div class="status-icon '+(d.total>0?'warn':'safe')+'">'+(d.total>0?'&#x26A0;':'&#x2713;')+'</div><div><div class="result-count">'+d.total+' filtraci&oacute;n(es)'+(dom?' para '+dom:'')+'</div><div class="result-email">Base de datos XposedOrNot</div></div>';
+h.innerHTML='<div class="status-icon '+(d.total>0?'warn':'safe')+'">'+(d.total>0?'&#x26A0;':'&#x2713;')+'</div><div><div class="result-count">'+d.total+' filtraci&oacute;n(es)'+(dom?' para '+dom:'')+'</div><div class="result-email">Filtraciones conocidas</div></div>';
 if(d.total===0){list.innerHTML='';info.innerHTML='No hay filtraciones'+(dom?' para '+dom:'')+'.';document.getElementById('breaches-result').classList.add('show');toast('&#9989; Sin filtraciones','success');return}
 toast('&#9888; '+d.total+' filtraciones encontradas','info');
 let lh='';d.breaches.slice(0,200).forEach(b=>{
@@ -815,11 +872,111 @@ document.getElementById('domain-result-header').innerHTML='<div class="status-ic
 document.getElementById('domain-info').innerHTML='Despliega en Netlify o usa: serve .';document.getElementById('domain-result').classList.add('show')}
 finally{ld('domain-btn','domain-btn-text','domain-spinner',false)}}
 
+// ===== SEARCH USERNAME/PHONE =====
+async function searchBreaches(){
+const q=document.getElementById('searchQuery').value.trim();
+if(!q){toast('Ingresa un usuario o tel&eacute;fono','error');return}
+ld('search-btn','search-btn-text','search-spinner',true);
+document.getElementById('search-result').classList.remove('show');
+try{
+const d=await api({search:q});
+if(!d.ok)throw new Error(d.error);
+const h=document.getElementById('search-result-header'),l=document.getElementById('search-list'),info=document.getElementById('search-info');
+h.innerHTML='<div class="status-icon '+(d.total>0?'warn':'safe')+'">'+(d.total>0?'&#x26A0;':'&#x2713;')+'</div><div><div class="result-count">'+d.total+' coincidencia(s)</div><div class="result-email">'+q+'</div></div>';
+if(d.total>0){
+let lh='<div class="section-title">Filtraciones relacionadas</div>';
+d.breaches.slice(0,100).forEach(function(b){
+const rec=fmt(b.exposedRecords),yr=b.breachedDate?b.breachedDate.substring(0,4):'',data=(b.exposedData||[]).join(', ');
+lh+='<div class="breach-card" onclick="td(event)"><div class="breach-card-header"><div><div class="breach-name">'+(b.logo?'<img class="logo-img" src="'+b.logo+'" alt="" onerror="this.style.display=\'none\'">':'')+b.breachID+'</div><div class="breach-domain">'+b.domain+'</div></div><div class="breach-badges">'+(rec?'<span class="badge badge-records">'+rec+'</span>':'')+(yr?'<span class="badge badge-year">'+yr+'</span>':'')+'<span class="badge badge-industry">'+tr(b.industry)+'</span></div></div>'+(data?'<div class="data-tags">'+data.split(', ').map(t=>'<span class="data-tag">'+t.trim()+'</span>').join('')+'</div>':'')+'<div class="breach-details"><strong>Descripci&oacute;n:</strong> '+(b.exposureDescription||'Sin descripci&oacute;n')+'</div></div>'});
+l.innerHTML=lh}
+else{l.innerHTML=''}
+info.innerHTML='B&uacute;squeda completada.';
+document.getElementById('search-result').classList.add('show')}
+catch(e){
+document.getElementById('search-result-header').innerHTML='<div class="status-icon info">&#x2139;</div><div><div class="result-count">Error</div><div class="result-email">'+(e.message||'Conexi&oacute;n fallida')+'</div></div>';
+document.getElementById('search-info').innerHTML='Intenta de nuevo.';document.getElementById('search-result').classList.add('show')}
+finally{ld('search-btn','search-btn-text','search-spinner',false)}}
+
+// ===== SCANNER =====
+function scanPersonalData(){
+const text=document.getElementById('scanText').value;
+if(!text.trim()){toast('Pega alg&uacute;n texto para escanear','error');return}
+const emails=[...new Set(text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g)||[])];
+const phones=[...new Set(text.match(/[\+]?[\d\-\(\)\s]{7,20}/g)||[])];
+const ips=[...new Set(text.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g)||[])];
+const urls=[...new Set(text.match(/https?:\/\/[^\s<>"']+/g)||[])];
+const cards=[...new Set(text.match(/\b(?:\d[ -]*?){13,19}\b/g)||[])];
+const validCards=cards.filter(cc=>{
+const d=cc.replace(/[\s-]/g,'');let s=0,f=0;
+for(let i=d.length-1;i>=0;i--){const n=parseInt(d[i]);if(f++%2){n*=2;if(n>9)n-=9}s+=n}
+return s%10===0});
+let html='<div class="section-title">Resultados del escaneo</div><div class="metrics-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">';
+html+='<div class="metric-card"><h4>Correos</h4><div style="font-size:28px;color:var(--accent2)">'+emails.length+'</div></div>';
+html+='<div class="metric-card"><h4>Tel&eacute;fonos</h4><div style="font-size:28px;color:var(--warn)">'+phones.length+'</div></div>';
+html+='<div class="metric-card"><h4>IPs</h4><div style="font-size:28px;color:var(--text3)">'+ips.length+'</div></div>';
+html+='<div class="metric-card"><h4>URLs</h4><div style="font-size:28px;color:var(--accent)">'+urls.length+'</div></div>';
+html+='<div class="metric-card"><h4>Tarjetas</h4><div style="font-size:28px;color:'+(validCards.length>0?'var(--danger)':'var(--accent)')+'">'+validCards.length+'</div></div>';
+html+='</div>';
+if(emails.length>0){
+html+='<div class="section-title">Correos encontrados</div><div class="data-tags" style="margin-bottom:12px">'+emails.map(e=>'<span class="data-tag" onclick="navigator.clipboard.writeText(\''+e+'\')">'+e+'</span>').join('')+'</div>'}
+if(phones.length>0){
+html+='<div class="section-title">Tel&eacute;fonos encontrados</div><div class="data-tags">'+phones.map(p=>'<span class="data-tag" style="border-color:rgba(255,180,0,.3)" onclick="navigator.clipboard.writeText(\''+p+'\')">'+p+'</span>').join('')+'</div>'}
+if(validCards.length>0){
+html+='<div class="section-title" style="color:var(--danger)">Tarjetas de cr&eacute;dito v&aacute;lidas</div><div class="data-tags">'+validCards.map(c=>'<span class="data-tag" style="border-color:var(--danger);color:var(--danger)">'+c+'</span>').join('')+'</div>'}
+if(emails.length===0&&phones.length===0&&ips.length===0&&urls.length===0&&validCards.length===0){
+html='<div class="info-msg">No se encontraron datos personales en el texto.</div>'}
+document.getElementById('scan-result-header').innerHTML='<div class="status-icon '+(emails.length||validCards.length||phones.length>5?'warn':'safe')+'">'+(emails.length||validCards.length?'&#x26A0;':'&#x2713;')+'</div><div><div class="result-count">Escaneo completado</div><div class="result-email">'+(emails.length+phones.length+ips.length+urls.length+validCards.length)+' datos encontrados</div></div>';
+document.getElementById('scan-list').innerHTML=html;
+document.getElementById('scan-info').innerHTML='Haz clic en cualquier elemento para copiarlo. Los datos se procesan completamente en tu navegador.';
+document.getElementById('scan-result').classList.add('show');
+toast('&#128269; Escaneo completado','info')}
+
+// ===== MAP =====
+let mapInitialized=!1,mapInstance=null,mapMarkers=[];
+async function loadMap(){
+const info=document.getElementById('map-info');
+document.getElementById('map-container').style.display='block';
+ld('map-btn','map-btn-text','map-spinner',true,'Cargando...');
+try{
+if(!mapInstance){
+mapInstance=L.map('map-container').setView([20,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:18}).addTo(mapInstance);
+setTimeout(()=>mapInstance.invalidateSize(),300)}
+if(mapMarkers.length===0){
+info.innerHTML='Cargando filtraciones...';
+const d=await api({breaches:'1'});
+if(!d.ok)throw new Error(d.error);
+const breaches=d.breaches||[];const domains=[...new Set(breaches.map(b=>b.domain).filter(Boolean))];
+const geoCache=JSON.parse(localStorage.getItem('bp_geo')||'{}');
+const uncached=domains.filter(dom=>!geoCache[dom]);
+if(uncached.length>0){
+const batch=uncached.slice(0,40);
+const results=await Promise.allSettled(batch.map(async dom=>{
+try{
+const r=await fetch('https://ip-api.com/json/'+encodeURIComponent(dom)+'?fields=lat,lon,country,status');
+const j=await r.json();
+if(j.status==='success')return{dom,lat:j.lat,lon:j.lon,country:j.country}
+}catch(e){}return null}));
+results.forEach(function(r){if(r.value&&r.value){geoCache[r.value.dom]=r.value}});
+localStorage.setItem('bp_geo',JSON.stringify(geoCache))}
+const grouped={};breaches.forEach(function(b){const dom=b.domain;if(geoCache[dom]){const key=geoCache[dom].lat+','+geoCache[dom].lon;if(!grouped[key]){grouped[key]={...geoCache[dom],count:0,names:[]}};grouped[key].count++;grouped[key].names.push(b.breachID)}});
+const bounds=[];Object.values(grouped).forEach(function(g){
+const marker=L.circleMarker([g.lat,g.lon],{radius:Math.min(12+Math.log(g.count)*4,40),color:'#00ff41',fillColor:'#00ff41',fillOpacity:.4,weight:1});
+marker.bindTooltip(g.count+' filtraci&oacute;n(es)<br><small>'+g.names.slice(0,5).join(', ')+(g.names.length>5?'...':'')+'</small>',{direction:'top'});
+marker.addTo(mapInstance);mapMarkers.push(marker);bounds.push([g.lat,g.lon])});
+if(bounds.length>0)mapInstance.fitBounds(bounds,{padding:[30,30]});
+info.innerHTML='<span style="color:var(--accent)">'+breaches.length+' filtraciones &middot; '+Object.keys(grouped).length+' ubicaciones</span>'}
+toast('&#127758; Mapa cargado','success')}
+catch(e){
+info.innerHTML='Error: '+(e.message||'No se pudo cargar el mapa')}
+finally{ld('map-btn','map-btn-text','map-spinner',false)}}
+
 // ===== KEYBOARD SHORTCUTS =====
 document.getElementById('email').addEventListener('keydown',e=>{if(e.key==='Enter')checkEmail()});
 document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')checkPassword()});
 document.getElementById('domain').addEventListener('keydown',e=>{if(e.key==='Enter')fetchBreaches()});
 document.getElementById('domainCheck').addEventListener('keydown',e=>{if(e.key==='Enter')checkDomainInfo()});
+document.getElementById('searchQuery').addEventListener('keydown',e=>{if(e.key==='Enter')searchBreaches()});
 
 // ===== INIT =====
 loadStats();
